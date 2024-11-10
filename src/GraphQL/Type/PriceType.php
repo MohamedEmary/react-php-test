@@ -5,11 +5,15 @@ namespace App\GraphQL\Type;
 use App\Database\Connection;
 use GraphQL\Type\Definition\ObjectType;
 use GraphQL\Type\Definition\Type;
+use PDO;
 
 class PriceType extends ObjectType
 {
-  public function __construct()
+  private PDO $db;
+
+  public function __construct(PDO $db)
   {
+    $this->db = $db;
     parent::__construct([
       'name' => 'Price',
       'fields' => [
@@ -18,8 +22,7 @@ class PriceType extends ObjectType
         'currency' => [
           'type' => new CurrencyType(),
           'resolve' => function ($price) {
-            $db = Connection::getInstance();
-            $stmt = $db->prepare('
+            $stmt = $this->db->prepare('
               SELECT *
               FROM currencies 
               WHERE label = ?

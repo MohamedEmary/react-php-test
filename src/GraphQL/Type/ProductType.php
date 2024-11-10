@@ -2,16 +2,17 @@
 
 namespace App\GraphQL\Type;
 
-use App\Database\Connection;
-use App\GraphQL\Type\AttributeSetGroupType;
-use App\GraphQL\Type\PriceType;
 use GraphQL\Type\Definition\ObjectType;
 use GraphQL\Type\Definition\Type;
+use PDO;
 
 class ProductType extends ObjectType
 {
-  public function __construct()
+  private PDO $db;
+
+  public function __construct(PDO $db)
   {
+    $this->db = $db;
     parent::__construct([
       'name' => 'Product',
       'description' => 'A product in the catalog',
@@ -25,8 +26,7 @@ class ProductType extends ObjectType
         'images' => [
           'type' => Type::listOf(new ProductImageType()),
           'resolve' => function ($product) {
-            $db = Connection::getInstance();
-            $stmt = $db->prepare('
+            $stmt = $this->db->prepare('
                   SELECT id, image_url
                   FROM product_images 
                   WHERE product_id = ? 
@@ -38,8 +38,7 @@ class ProductType extends ObjectType
         'attributes' => [
           'type' => Type::listOf(new AttributeSetGroupType()),
           'resolve' => function ($product) {
-            $db = Connection::getInstance();
-            $stmt = $db->prepare('
+            $stmt = $this->db->prepare('
                   SELECT DISTINCT attr_set.id, 
                         attr_set.name, 
                         attr_set.type,
@@ -61,10 +60,9 @@ class ProductType extends ObjectType
           }
         ],
         'prices' => [
-          'type' => Type::listOf(new PriceType()),
+          'type' => Type::listOf(new PriceType($db)),
           'resolve' => function ($product) {
-            $db = Connection::getInstance();
-            $stmt = $db->prepare('
+            $stmt = $this->db->prepare('
                   SELECT *
                   FROM prices
                   WHERE product_id = ?

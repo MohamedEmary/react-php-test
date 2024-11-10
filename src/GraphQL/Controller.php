@@ -2,6 +2,7 @@
 
 namespace App\GraphQL;
 
+use App\Database\Connection;
 use App\GraphQL\Type\MutationType;
 use App\GraphQL\Type\QueryType;
 use GraphQL\Type\Schema;
@@ -15,10 +16,11 @@ class Controller
     public static function handle()
     {
         try {
+            $db = Connection::getInstance();
             $schema = new Schema(
                 (new SchemaConfig())
-                    ->setQuery(new QueryType())
-                    ->setMutation(new MutationType())
+                    ->setQuery(new QueryType($db))
+                    ->setMutation(new MutationType($db))
             );
 
             $rawInput = file_get_contents('php://input');
@@ -47,6 +49,6 @@ class Controller
         }
 
         header('Content-Type: application/json; charset=UTF-8');
-        return json_encode($output);
+        echo json_encode($output);
     }
 }
