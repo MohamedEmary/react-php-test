@@ -1,1 +1,6 @@
+# Directories
 /vendor/
+/draft/
+
+# Files
+.env

@@ -59,3 +59,25 @@ CREATE TABLE IF NOT EXISTS prices (
     FOREIGN KEY (product_id) REFERENCES products (id),
     FOREIGN KEY (currency_label) REFERENCES currencies (label)
 );
+
+CREATE TABLE IF NOT EXISTS users (
+    id INT AUTO_INCREMENT PRIMARY KEY
+);
+
+CREATE TABLE IF NOT EXISTS orders (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    product_id VARCHAR(50) NOT NULL,
+    quantity INT DEFAULT 1,
+    FOREIGN KEY (user_id) REFERENCES users (id),
+    FOREIGN KEY (product_id) REFERENCES products (id)
+);
+
+CREATE TABLE IF NOT EXISTS order_attributes (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    order_id INT NOT NULL,
+    attribute_set_id VARCHAR(50) NOT NULL,
+    selected_value VARCHAR(100) NOT NULL,
+    FOREIGN KEY (order_id) REFERENCES orders (id),
+    FOREIGN KEY (attribute_set_id) REFERENCES attribute_sets (id)
+);
