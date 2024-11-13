@@ -2,15 +2,20 @@
 export default {
   content: ["./index.html", "./src/**/*.{js,ts,jsx,tsx}"],
   theme: {
-    extend: {},
     container: {
+      center: true,
       padding: {
-        DEFAULT: "16px",
-        sm: "32px",
-        lg: "64px",
-        xl: "100px",
+        DEFAULT: "100px",
+      },
+      screens: {
+        sm: "100%",
+        md: "100%",
+        lg: "100%",
+        xl: "100%",
+        "2xl": "100%",
       },
     },
+    extend: {},
   },
   plugins: [],
 };
