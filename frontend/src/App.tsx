@@ -7,6 +7,7 @@ export default class App extends Component {
     return (
       <BrowserRouter>
         <div className="container mx-auto">
+          <Navbar />
         </div>
       </BrowserRouter>
     );
