@@ -1,15 +1,34 @@
 import { Component } from "react";
-import { BrowserRouter } from "react-router-dom";
-import Navbar from "./components/Navbar";
+import { createBrowserRouter, RouterProvider } from "react-router-dom";
+import CategoryPage from "./pages/Category";
+import CartContextProvider from "./context/CartContext";
+import MainLayout from "./pages/MainLayout";
+import NotFound from "./pages/NotFound";
 
 export default class App extends Component {
+  router = createBrowserRouter([
+    {
+      path: "",
+      element: <MainLayout />,
+      children: [
+        {
+          index: true,
+          element: <CategoryPage />,
+        },
+        {
+          path: "categories/:category",
+          element: <CategoryPage />,
+        },
+        { path: "*", element: <NotFound /> },
+      ],
+    },
+  ]);
+
   render(): React.ReactNode {
     return (
-      <BrowserRouter>
-        <div className="container mx-auto">
-          <Navbar />
-        </div>
-      </BrowserRouter>
+      <CartContextProvider>
+        <RouterProvider router={this.router} />
+      </CartContextProvider>
     );
   }
 }
