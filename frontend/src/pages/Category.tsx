@@ -78,7 +78,7 @@ class CategoryPage extends Component<
     const { products, category } = this.state;
 
     return (
-      <div className="mt-[150px]">
+      <>
         <h1 className="text-[42px] leading-[67.2px] mb-[100px] capitalize">
           {category}
         </h1>
@@ -88,7 +88,7 @@ class CategoryPage extends Component<
             <ProductCard key={index} product={product} />
           ))}
         </div>
-      </div>
+      </>
     );
   }
 }

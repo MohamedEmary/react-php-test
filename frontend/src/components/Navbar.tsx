@@ -1,4 +1,4 @@
-import React from "react";
+import { Component } from "react";
 import logo from "../assets/logo.svg";
 import cart from "../assets/cart-icon.svg";
 import axios from "axios";
@@ -8,7 +8,7 @@ interface navbarStateType {
   categories: string[];
 }
 
-export default class Navbar extends React.Component<object, navbarStateType> {
+export default class Navbar extends Component<object, navbarStateType> {
   state: Readonly<navbarStateType> = {
     categories: [""],
   };
