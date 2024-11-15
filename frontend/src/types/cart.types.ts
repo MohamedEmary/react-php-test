@@ -3,7 +3,7 @@ export interface OrderAttribute {
   value: string;
 }
 
-export interface CreateOrderInput {
+export interface AddToCartInput {
   userId: number;
   productId: string;
   quantity: number;
@@ -15,9 +15,9 @@ export interface attributeType {
   value: string;
 }
 
-export interface CreateOrderResponse {
+export interface AddToCartResponse {
   data: {
-    createOrder: number;
+    addToCart: number;
   };
 }
 
@@ -26,5 +26,5 @@ export interface CartContextType {
     prodId: string,
     quantity: number,
     attributes: attributeType[]
-  ) => Promise<CreateOrderResponse | undefined>;
+  ) => Promise<AddToCartResponse | undefined>;
 }
