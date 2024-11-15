@@ -4,9 +4,7 @@ CREATE DATABASE IF NOT EXISTS scandiweb_test;
 
 USE scandiweb_test;
 
-CREATE TABLE IF NOT EXISTS categories (
-    name VARCHAR(100) NOT NULL PRIMARY KEY
-);
+CREATE TABLE IF NOT EXISTS categories (name VARCHAR(100) NOT NULL PRIMARY KEY);
 
 CREATE TABLE IF NOT EXISTS products (
     id VARCHAR(50) PRIMARY KEY,
@@ -14,7 +12,7 @@ CREATE TABLE IF NOT EXISTS products (
     description TEXT,
     brand VARCHAR(100),
     category_name VARCHAR(100),
-    in_stock BOOLEAN DEFAULT true,
+    in_stock BOOLEAN DEFAULT TRUE,
     FOREIGN KEY (category_name) REFERENCES categories (name)
 );
 
@@ -28,7 +26,7 @@ CREATE TABLE IF NOT EXISTS product_images (
 CREATE TABLE IF NOT EXISTS attribute_sets (
     id VARCHAR(50) PRIMARY KEY,
     name VARCHAR(100) NOT NULL,
-    type VARCHAR(50) NOT NULL
+    TYPE VARCHAR(50) NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS attribute_items (
@@ -64,20 +62,21 @@ CREATE TABLE IF NOT EXISTS users (
     id INT AUTO_INCREMENT PRIMARY KEY
 );
 
-CREATE TABLE IF NOT EXISTS orders (
+CREATE TABLE IF NOT EXISTS cart_items (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
     product_id VARCHAR(50) NOT NULL,
     quantity INT DEFAULT 1,
+    is_order BOOLEAN DEFAULT FALSE,
     FOREIGN KEY (user_id) REFERENCES users (id),
     FOREIGN KEY (product_id) REFERENCES products (id)
 );
 
-CREATE TABLE IF NOT EXISTS order_attributes (
+CREATE TABLE IF NOT EXISTS cart_items_attributes (
     id INT AUTO_INCREMENT PRIMARY KEY,
     order_id INT NOT NULL,
     attribute_set_id VARCHAR(50) NOT NULL,
     selected_value VARCHAR(100) NOT NULL,
-    FOREIGN KEY (order_id) REFERENCES orders (id),
+    FOREIGN KEY (order_id) REFERENCES cart_items (id),
     FOREIGN KEY (attribute_set_id) REFERENCES attribute_sets (id)
 );

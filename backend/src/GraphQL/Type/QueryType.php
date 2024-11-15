@@ -56,6 +56,61 @@ class QueryType extends ObjectType
             return $stmt->fetchAll();
           }
         ],
+        'GetUserCart' => [
+          'type' => Type::listOf(new ObjectType([
+            'name' => 'CartItem',
+            'fields' => [
+              'id' => Type::nonNull(Type::int()),
+              'quantity' => Type::nonNull(Type::int()),
+              'product' => Type::nonNull(new ProductType($this->db)),
+              'selectedAttributes' => Type::listOf(new ObjectType([
+                'name' => 'SelectedAttribute',
+                'fields' => [
+                  'name' => Type::nonNull(Type::string()),
+                  'value' => Type::nonNull(Type::string())
+                ]
+              ]))
+            ]
+          ])),
+          'args' => [
+            'userId' => Type::nonNull(Type::int())
+          ],
+          'resolve' => function ($root, $args) {
+            $stmt = $this->db->prepare('
+                    SELECT ci.id, ci.quantity, ci.product_id,
+                          p.* 
+                    FROM cart_items ci
+                    JOIN products p ON p.id = ci.product_id 
+                    WHERE ci.user_id = ? AND ci.is_order = FALSE
+                  ');
+            $stmt->execute([$args['userId']]);
+            $cartItems = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            if (empty($cartItems)) {
+              return [];
+            }
+
+            $result = [];
+            foreach ($cartItems as $item) {
+              $attrStmt = $this->db->prepare('
+                      SELECT cia.attribute_set_id as name, cia.selected_value as value
+                      FROM cart_items_attributes cia
+                      WHERE cia.order_id = ?
+                    ');
+              $attrStmt->execute([$item['id']]);
+              $attributes = $attrStmt->fetchAll(PDO::FETCH_ASSOC);
+
+              $result[] = [
+                'id' => (int) $item['id'],
+                'quantity' => (int) $item['quantity'],
+                'product' => $item,
+                'selectedAttributes' => $attributes
+              ];
+            }
+
+            return $result;
+          }
+        ]
       ],
     ]);
   }

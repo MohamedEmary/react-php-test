@@ -26,7 +26,7 @@ class MutationType extends ObjectType
             return $this->db->lastInsertId();
           }
         ],
-        'createOrder' => [
+        'addToCart' => [
           'type' => Type::int(),
           'args' => [
             'userId' => Type::nonNull(Type::int()),
@@ -41,6 +41,7 @@ class MutationType extends ObjectType
             ]))
           ],
           'resolve' => function ($root, $args) {
+            // Check product stock
             $stmt = $this->db->prepare('SELECT in_stock FROM products WHERE id = ?');
             $stmt->execute([$args['productId']]);
             $product = $stmt->fetch();
@@ -49,20 +50,22 @@ class MutationType extends ObjectType
               throw new UserError('Product is out of stock');
             }
 
+            // Get required attributes
             $stmt = $this->db->prepare('
-                            SELECT DISTINCT 
-                                attr_set.id as set_id,
-                                attr_set.name,
-                                GROUP_CONCAT(attr_it.value) as allowed_values
-                            FROM attribute_sets attr_set
-                            JOIN attribute_items attr_it 
-                                ON attr_it.attribute_set_id = attr_set.id
-                            WHERE attr_it.product_id = ?
-                            GROUP BY attr_set.id, attr_set.name
-                        ');
+                                    SELECT DISTINCT 
+                                        attr_set.id as set_id,
+                                        attr_set.name,
+                                        GROUP_CONCAT(attr_it.value) as allowed_values
+                                    FROM attribute_sets attr_set
+                                    JOIN attribute_items attr_it 
+                                        ON attr_it.attribute_set_id = attr_set.id
+                                    WHERE attr_it.product_id = ?
+                                    GROUP BY attr_set.id, attr_set.name
+                                ');
             $stmt->execute([$args['productId']]);
             $requiredAttributes = $stmt->fetchAll();
 
+            // Validate attributes
             if (count($requiredAttributes) > 0) {
               if (empty($args['attributes'])) {
                 throw new UserError('Product attributes are required');
@@ -93,19 +96,79 @@ class MutationType extends ObjectType
               }
             }
 
-            $stmt = $this->db->prepare('INSERT INTO orders (user_id, product_id, quantity) VALUES (?, ?, ?)');
-            $stmt->execute([$args['userId'], $args['productId'], $args['quantity'] ?? 1]);
+            // Check for existing cart item
+            $stmt = $this->db->prepare('
+                        SELECT id, quantity 
+                        FROM cart_items 
+                        WHERE user_id = ? AND product_id = ? AND is_order = FALSE
+                    ');
+            $stmt->execute([$args['userId'], $args['productId']]);
+            $existingItem = $stmt->fetch();
 
-            $orderId = $this->db->lastInsertId();
+            $quantity = $args['quantity'] ?? 1;
 
-            if (!empty($args['attributes'])) {
-              $stmt = $this->db->prepare('INSERT INTO order_attributes (order_id, attribute_set_id, selected_value) VALUES (?, ?, ?)');
-              foreach ($args['attributes'] as $attribute) {
-                $stmt->execute([$orderId, $attribute['name'], $attribute['value']]);
+            if ($existingItem) {
+              // Update existing cart item quantity
+              $stmt = $this->db->prepare('
+                            UPDATE cart_items 
+                            SET quantity = quantity + ? 
+                            WHERE id = ?
+                        ');
+              $stmt->execute([$quantity, $existingItem['id']]);
+              $itemId = $existingItem['id'];
+            } else {
+              // Create new cart item
+              $stmt = $this->db->prepare('
+                            INSERT INTO cart_items (user_id, product_id, quantity) 
+                            VALUES (?, ?, ?)
+                        ');
+              $stmt->execute([$args['userId'], $args['productId'], $quantity]);
+              $itemId = $this->db->lastInsertId();
+
+              // Add attributes for new item
+              if (!empty($args['attributes'])) {
+                $stmt = $this->db->prepare('
+                                INSERT INTO cart_items_attributes 
+                                (order_id, attribute_set_id, selected_value) 
+                                VALUES (?, ?, ?)
+                            ');
+                foreach ($args['attributes'] as $attribute) {
+                  $stmt->execute([$itemId, $attribute['name'], $attribute['value']]);
+                }
               }
             }
 
-            return $orderId;
+            return $itemId;
+          }
+        ],
+        'addOrder' => [
+          'type' => Type::nonNull(Type::string()),
+          'args' => [
+            'userId' => Type::nonNull(Type::int())
+          ],
+          'resolve' => function ($root, $args) {
+            $stmt = $this->db->prepare('
+                              SELECT ci.id, ci.product_id 
+                              FROM cart_items ci
+                              WHERE ci.user_id = ? AND ci.is_order = FALSE
+                            ');
+            $stmt->execute([$args['userId']]);
+            $items = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            if (!empty($items)) {
+              $cartItemIds = array_column($items, 'id');
+              $productIds = array_column($items, 'product_id');
+
+              $stmt = $this->db->prepare('
+                                UPDATE cart_items 
+                                SET is_order = TRUE 
+                                WHERE id IN (' . str_repeat('?,', count($cartItemIds) - 1) . '?)
+                              ');
+              $stmt->execute($cartItemIds);
+              return 'Successfully added order with products: ' . implode(', ', $productIds);
+            } else {
+              return 'No items in cart';
+            }
           }
         ]
       ],

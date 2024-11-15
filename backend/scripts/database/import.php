@@ -111,12 +111,10 @@ class DatabaseImporter
     private function importProducts(): void
     {
         foreach ($this->data['data']['products'] as $product) {
-            // Clean existing related records
             $this->statements['deleteImages']->execute([$product['id']]);
             $this->statements['deleteAttributes']->execute([$product['id']]);
             $this->statements['deletePrices']->execute([$product['id']]);
 
-            // Insert product
             $this->statements['product']->execute([
                 $product['id'],
                 $product['name'],
@@ -126,7 +124,6 @@ class DatabaseImporter
                 $product['brand'] ?? null
             ]);
 
-            // Import related data
             $this->importImages($product);
             $this->importAttributes($product);
             $this->importPrices($product);
@@ -187,7 +184,6 @@ class DatabaseImporter
     }
 }
 
-// Execute import
 try {
     $importer = new DatabaseImporter('data.json');
     $importer->import();
