@@ -11,7 +11,7 @@ export default class NotFound extends Component {
         </p>
         <Link
           to="/"
-          className="px-6 py-3 bg-green-700 text-white hover:bg-green-600 transition-colors"
+          className="px-6 py-3 bg-emerald-700 text-white hover:bg-emerald-600 transition-colors"
         >
           Back to Homepage
         </Link>

@@ -1,10 +1,10 @@
 import { Component } from "react";
-import { productType } from "../types/other.types";
+import { ProductType } from "../types/other.types";
 import { Link } from "react-router-dom";
-import greenCart from "../assets/green-cart.svg";
+import { ShoppingCart } from "lucide-react";
 
 interface ProductCardProps {
-  product: productType;
+  product: ProductType;
 }
 
 export default class ProductCard extends Component<ProductCardProps> {
@@ -52,8 +52,8 @@ export default class ProductCard extends Component<ProductCardProps> {
 
         {in_stock && (
           <Link to={`/product/${id}`}>
-            <button className="absolute bottom-16 right-7 bg-[#5ECE7B] rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
-              <img src={greenCart} alt="add to cart" />
+            <button className="absolute bottom-16 right-7 bg-emerald-400 hover:bg-emerald-700 rounded-full opacity-0 group-hover:opacity-100 transition-all">
+              <ShoppingCart className="text-white p-2  w-11 h-11" />
             </button>
           </Link>
         )}
@@ -61,16 +61,3 @@ export default class ProductCard extends Component<ProductCardProps> {
     );
   }
 }
-
-/*
-
-
-        mutation {
-          createOrder(
-            userId: 1,
-            productId: "ps-5",
-            quantity: 1,
-            attributes: [{"name":"Color","value":"#000000"},{"name":"Size","value":"XL"}]
-          )
-        }
-*/

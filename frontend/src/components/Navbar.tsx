@@ -1,8 +1,8 @@
 import { Component } from "react";
 import logo from "../assets/logo.svg";
-import cart from "../assets/cart-icon.svg";
 import axios from "axios";
 import { Link, NavLink } from "react-router-dom";
+import { ShoppingCart } from "lucide-react";
 
 interface navbarStateType {
   categories: string[];
@@ -15,8 +15,8 @@ export default class Navbar extends Component<object, navbarStateType> {
 
   fetchCategories = async () => {
     const data = {
-      query: `query GetCategories {
-        categories
+      query: `query {
+        GetCategories
       }`,
     };
 
@@ -30,7 +30,7 @@ export default class Navbar extends Component<object, navbarStateType> {
       .request(config)
       .then((response) => {
         this.setState({
-          categories: response.data.data.categories,
+          categories: response.data.data.GetCategories,
         });
       })
       .catch((error) => {
@@ -61,7 +61,7 @@ export default class Navbar extends Component<object, navbarStateType> {
           </Link>
         </div>
         <div className="col-span-2 flex justify-end">
-          <img src={cart} alt="Cart icon" className="block" />
+          <ShoppingCart className="text-gray-600" />
         </div>
       </nav>
     );
