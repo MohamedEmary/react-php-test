@@ -42,7 +42,7 @@ class ProductType extends ObjectType
                   SELECT DISTINCT attr_set.id, 
                         attr_set.name, 
                         attr_set.type,
-                        GROUP_CONCAT(attr_it.display_value) as value_list
+                        GROUP_CONCAT(attr_it.value) as value_list
                   FROM attribute_sets attr_set
                   JOIN attribute_items attr_it ON attr_it.attribute_set_id = attr_set.id 
                   WHERE attr_it.product_id = ?
