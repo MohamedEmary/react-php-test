@@ -1,3 +1,5 @@
+import { ProductType } from "./other.types";
+
 export interface OrderAttribute {
   name: string;
   value: string;
@@ -22,9 +24,5 @@ export interface AddToCartResponse {
 }
 
 export interface CartContextType {
-  addToCart: (
-    prodId: string,
-    quantity: number,
-    attributes: attributeType[]
-  ) => Promise<AddToCartResponse | undefined>;
+  handleAddToCart: (state: ProductType) => void;
 }

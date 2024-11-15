@@ -2,26 +2,22 @@ import React, { Component } from "react";
 import axios from "axios";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useParams } from "react-router-dom";
-import { ProductType } from "../types/other.types";
-import toast from "react-hot-toast";
+import { ProductResponse, ProductType } from "../types/other.types";
+import { cartContext } from "../context/CartContext";
 
 const ProductPageWrapper = () => {
   const { id } = useParams();
   return <ProductPage productId={id} />;
 };
 
-interface ProductResponse {
-  data: {
-    GetProductWithId: ProductType[];
-    addToCart: number | null;
-  };
-}
-
 interface ProductPageProps {
   productId?: string;
 }
 
 class ProductPage extends Component<ProductPageProps, ProductType> {
+  static contextType = cartContext;
+  declare context: React.ContextType<typeof cartContext>;
+
   state: ProductType = {
     name: "",
     in_stock: false,
@@ -39,56 +35,6 @@ class ProductPage extends Component<ProductPageProps, ProductType> {
       await this.getProductData();
     }
   }
-
-  handleAddToCart = async () => {
-    if (this.state.in_stock) {
-      const selectedAttributesArr = [];
-      for (const [key, value] of Object.entries(
-        this.state.selectedAttributes
-      )) {
-        selectedAttributesArr.push({ name: key, value: value });
-      }
-
-      const data = {
-        query: `
-          mutation {
-            addToCart(
-                userId: ${1},
-                productId: "${this.state.id}",
-                attributes: ${JSON.stringify(selectedAttributesArr).replace(
-                  /"([^"]+)":/g,
-                  "$1:"
-                )}
-            )
-          }`,
-      };
-
-      const config = {
-        method: "post",
-        url: "http://localhost:8000/graphql",
-        data: data,
-      };
-
-      const toastId = toast.loading("Adding product to cart...");
-
-      try {
-        const response = await axios.request<ProductResponse>(config);
-        console.log(response.data.data);
-        if (response.data.data.addToCart) {
-          toast.success("Product added to cart", { id: toastId });
-        } else {
-          toast.error(
-            "Something went wrong, Please refresh the page and try again",
-            { id: toastId }
-          );
-        }
-      } catch (error) {
-        toast.error("Error fetching product data", { id: toastId });
-        console.log("Error fetching product data:", error);
-        return undefined;
-      }
-    }
-  };
 
   getProductData = async () => {
     const data = {
@@ -279,7 +225,7 @@ class ProductPage extends Component<ProductPageProps, ProductType> {
                 ? "bg-emerald-500 hover:bg-emerald-600 text-white"
                 : "bg-gray-200 text-gray-500 cursor-not-allowed"
             }`}
-            onClick={this.handleAddToCart}
+            onClick={() => this.context?.handleAddToCart(this.state)}
             disabled={!in_stock}
           >
             {in_stock ? "ADD TO CART" : "OUT OF STOCK"}

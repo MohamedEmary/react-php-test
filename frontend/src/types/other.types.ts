@@ -22,3 +22,13 @@ export interface ProductType {
   };
   currentImageIndex: number;
 }
+
+export interface ProductResponse {
+  errors: {
+    message: string;
+  }[];
+  data: {
+    GetProductWithId: ProductType[];
+    addToCart: number | null;
+  };
+}
