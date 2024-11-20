@@ -62,6 +62,8 @@ class QueryType extends ObjectType
             'fields' => [
               'id' => Type::nonNull(Type::id()),
               'quantity' => Type::nonNull(Type::int()),
+              'totalPrice' => Type::nonNull(Type::float()),
+              'currencySymbol' => Type::nonNull(Type::string()),
               'product' => Type::nonNull(new ObjectType([
                 'name' => 'CartProduct',
                 'fields' => [
@@ -70,6 +72,8 @@ class QueryType extends ObjectType
                   'brand' => Type::string(),
                   'category' => Type::string(),
                   'description' => Type::string(),
+                  'price' => Type::nonNull(Type::float()),
+                  'imageUrl' => Type::string(),
                   'attributes' => Type::listOf(new ObjectType([
                     'name' => 'CartItemAttribute',
                     'fields' => [
@@ -90,6 +94,10 @@ class QueryType extends ObjectType
               SELECT 
                   ci.id as cart_item_id,
                   ci.quantity,
+                  ci.unit_price,
+                  ci.total_price,
+                  ci.currency_symbol,
+                  ci.product_image,
                   ci.product_id,
                   p.name as product_name,
                   p.brand,
@@ -117,12 +125,16 @@ class QueryType extends ObjectType
                 $items[$itemId] = [
                   'id' => $itemId,
                   'quantity' => $row['quantity'],
+                  'totalPrice' => $row['total_price'],
+                  'currencySymbol' => $row['currency_symbol'],
                   'product' => [
                     'id' => $row['product_id'],
                     'name' => $row['product_name'],
                     'brand' => $row['brand'],
                     'category' => $row['category_name'],
+                    'price' => $row['unit_price'],
                     'description' => $row['description'],
+                    'imageUrl' => $row['product_image'],
                     'attributes' => []
                   ]
                 ];

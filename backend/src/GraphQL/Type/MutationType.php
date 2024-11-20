@@ -50,6 +50,26 @@ class MutationType extends ObjectType
               throw new UserError('Product is out of stock');
             }
 
+            $stmt = $this->db->prepare('
+                          SELECT p.name, pr.amount, c.symbol as currency_symbol
+                          FROM products p
+                          JOIN prices pr ON pr.product_id = p.id 
+                          JOIN currencies c ON c.label = pr.currency_label
+                          WHERE p.id = ? AND pr.currency_label = "USD"
+                      ');
+            $stmt->execute([$args['productId']]);
+            $productData = $stmt->fetch();
+
+            // Get first product image
+            $stmt = $this->db->prepare('
+                          SELECT image_url 
+                          FROM product_images 
+                          WHERE product_id = ? 
+                          LIMIT 1
+                      ');
+            $stmt->execute([$args['productId']]);
+            $imageData = $stmt->fetch();
+
             // Get required attributes
             $stmt = $this->db->prepare('
                                     SELECT DISTINCT 
@@ -75,7 +95,7 @@ class MutationType extends ObjectType
 
               foreach ($args['attributes'] as $attr) {
                 if (!in_array($attr['name'], $validAttributeNames)) {
-                  throw new UserError("Invalid attribute: {$attr['name']} is not a valid attribute for this product");
+                  throw new UserError("Invalid attribute: {$attr['name']} is not valid for this product");
                 }
               }
 
@@ -119,10 +139,26 @@ class MutationType extends ObjectType
             } else {
               // Create new cart item
               $stmt = $this->db->prepare('
-                            INSERT INTO cart_items (user_id, product_id, quantity) 
-                            VALUES (?, ?, ?)
-                        ');
-              $stmt->execute([$args['userId'], $args['productId'], $quantity]);
+            INSERT INTO cart_items (
+                user_id, 
+                product_id, 
+                quantity,
+                unit_price,
+                product_name,
+                product_image,
+                currency_symbol
+            ) 
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        ');
+              $stmt->execute([
+                $args['userId'],
+                $args['productId'],
+                $quantity,
+                $productData['amount'],
+                $productData['name'],
+                $imageData['image_url'],
+                $productData['currency_symbol']
+              ]);
               $itemId = $this->db->lastInsertId();
 
               // Add attributes for new item
@@ -171,7 +207,6 @@ class MutationType extends ObjectType
             }
           }
         ],
-        // In MutationType.php
         'IncreaseCartItemQuantity' => [
           'type' => new ObjectType([
             'name' => 'CartItemUpdate',
@@ -191,7 +226,6 @@ class MutationType extends ObjectType
         ');
             $stmt->execute([':cart_item_id' => $args['cartItemId']]);
 
-            // Get updated cart item
             $stmt = $this->db->prepare('
             SELECT id, quantity 
             FROM cart_items 

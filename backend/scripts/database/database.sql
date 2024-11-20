@@ -68,6 +68,11 @@ CREATE TABLE IF NOT EXISTS cart_items (
     product_id VARCHAR(50) NOT NULL,
     quantity INT DEFAULT 1,
     is_order BOOLEAN DEFAULT FALSE,
+    unit_price DECIMAL(10, 2),
+    total_price DECIMAL(10, 2) GENERATED ALWAYS AS (unit_price * quantity) STORED,
+    product_image TEXT,
+    currency_symbol VARCHAR(5),
+    product_name VARCHAR(255),
     FOREIGN KEY (user_id) REFERENCES users (id),
     FOREIGN KEY (product_id) REFERENCES products (id)
 );
