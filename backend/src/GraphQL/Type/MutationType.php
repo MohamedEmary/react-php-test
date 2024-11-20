@@ -170,6 +170,64 @@ class MutationType extends ObjectType
               return 'No items in cart';
             }
           }
+        ],
+        // In MutationType.php
+        'IncreaseCartItemQuantity' => [
+          'type' => new ObjectType([
+            'name' => 'CartItemUpdate',
+            'fields' => [
+              'id' => Type::nonNull(Type::id()),
+              'quantity' => Type::nonNull(Type::int())
+            ]
+          ]),
+          'args' => [
+            'cartItemId' => Type::nonNull(Type::id())
+          ],
+          'resolve' => function ($root, $args) {
+            $stmt = $this->db->prepare('
+            UPDATE cart_items 
+            SET quantity = quantity + 1 
+            WHERE id = :cart_item_id
+        ');
+            $stmt->execute([':cart_item_id' => $args['cartItemId']]);
+
+            // Get updated cart item
+            $stmt = $this->db->prepare('
+            SELECT id, quantity 
+            FROM cart_items 
+            WHERE id = :cart_item_id
+        ');
+            $stmt->execute([':cart_item_id' => $args['cartItemId']]);
+            return $stmt->fetch();
+          }
+        ],
+        'DecreaseCartItemQuantity' => [
+          'type' => new ObjectType([
+            'name' => 'CartItemUpdate',
+            'fields' => [
+              'id' => Type::nonNull(Type::id()),
+              'quantity' => Type::nonNull(Type::int())
+            ]
+          ]),
+          'args' => [
+            'cartItemId' => Type::nonNull(Type::id())
+          ],
+          'resolve' => function ($root, $args) {
+            $stmt = $this->db->prepare('
+            UPDATE cart_items 
+            SET quantity = GREATEST(quantity - 1, 1)
+            WHERE id = :cart_item_id
+        ');
+            $stmt->execute([':cart_item_id' => $args['cartItemId']]);
+
+            $stmt = $this->db->prepare('
+            SELECT id, quantity 
+            FROM cart_items 
+            WHERE id = :cart_item_id
+        ');
+            $stmt->execute([':cart_item_id' => $args['cartItemId']]);
+            return $stmt->fetch();
+          }
         ]
       ],
     ]);
