@@ -57,58 +57,87 @@ class QueryType extends ObjectType
           }
         ],
         'GetUserCart' => [
-          'type' => Type::listOf(new ObjectType([
+          'type' => Type::nonNull(Type::listOf(Type::nonNull(new ObjectType([
             'name' => 'CartItem',
             'fields' => [
-              'id' => Type::nonNull(Type::int()),
+              'id' => Type::nonNull(Type::id()),
               'quantity' => Type::nonNull(Type::int()),
-              'product' => Type::nonNull(new ProductType($this->db)),
-              'selectedAttributes' => Type::listOf(new ObjectType([
-                'name' => 'SelectedAttribute',
+              'product' => Type::nonNull(new ObjectType([
+                'name' => 'CartProduct',
                 'fields' => [
+                  'id' => Type::nonNull(Type::string()),
                   'name' => Type::nonNull(Type::string()),
-                  'value' => Type::nonNull(Type::string())
+                  'brand' => Type::string(),
+                  'category' => Type::string(),
+                  'description' => Type::string(),
+                  'attributes' => Type::listOf(new ObjectType([
+                    'name' => 'CartItemAttribute',
+                    'fields' => [
+                      'name' => Type::nonNull(Type::string()),
+                      'type' => Type::nonNull(Type::string()),
+                      'selectedValue' => Type::nonNull(Type::string())
+                    ]
+                  ]))
                 ]
               ]))
             ]
-          ])),
+          ])))),
           'args' => [
             'userId' => Type::nonNull(Type::int())
           ],
           'resolve' => function ($root, $args) {
             $stmt = $this->db->prepare('
-                    SELECT ci.id, ci.quantity, ci.product_id,
-                          p.* 
-                    FROM cart_items ci
-                    JOIN products p ON p.id = ci.product_id 
-                    WHERE ci.user_id = ? AND ci.is_order = FALSE
-                  ');
-            $stmt->execute([$args['userId']]);
-            $cartItems = $stmt->fetchAll(PDO::FETCH_ASSOC);
+              SELECT 
+                  ci.id as cart_item_id,
+                  ci.quantity,
+                  ci.product_id,
+                  p.name as product_name,
+                  p.brand,
+                  p.category_name,
+                  p.description,
+                  cia.attribute_set_id,
+                  cia.selected_value,
+                  ast.name as attribute_name,
+                  ast.type as attribute_type
+              FROM cart_items ci
+              JOIN products p ON ci.product_id = p.id
+              LEFT JOIN cart_items_attributes cia ON ci.id = cia.order_id
+              LEFT JOIN attribute_sets ast ON cia.attribute_set_id = ast.id
+              WHERE ci.user_id = :user_id AND ci.is_order = false
+            ');
 
-            if (empty($cartItems)) {
-              return [];
-            }
+            $stmt->execute([
+              ':user_id' => $args['userId']
+            ]);
+            $cart = $stmt->fetchAll();
 
-            $result = [];
-            foreach ($cartItems as $item) {
-              $attrStmt = $this->db->prepare('
-                      SELECT cia.attribute_set_id as name, cia.selected_value as value
-                      FROM cart_items_attributes cia
-                      WHERE cia.order_id = ?
-                    ');
-              $attrStmt->execute([$item['id']]);
-              $attributes = $attrStmt->fetchAll(PDO::FETCH_ASSOC);
+            return array_reduce($cart, function ($items, $row) {
+              $itemId = $row['cart_item_id'];
+              if (!isset($items[$itemId])) {
+                $items[$itemId] = [
+                  'id' => $itemId,
+                  'quantity' => $row['quantity'],
+                  'product' => [
+                    'id' => $row['product_id'],
+                    'name' => $row['product_name'],
+                    'brand' => $row['brand'],
+                    'category' => $row['category_name'],
+                    'description' => $row['description'],
+                    'attributes' => []
+                  ]
+                ];
+              }
 
-              $result[] = [
-                'id' => (int) $item['id'],
-                'quantity' => (int) $item['quantity'],
-                'product' => $item,
-                'selectedAttributes' => $attributes
-              ];
-            }
+              if ($row['attribute_set_id']) {
+                $items[$itemId]['product']['attributes'][] = [
+                  'name' => $row['attribute_name'],
+                  'type' => $row['attribute_type'],
+                  'selectedValue' => $row['selected_value']
+                ];
+              }
 
-            return $result;
+              return $items;
+            }, []);
           }
         ]
       ],
