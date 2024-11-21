@@ -23,6 +23,29 @@ export interface AddToCartResponse {
   };
 }
 
+interface CartProductType {
+  id: string;
+  name: string;
+  brand: string;
+  category: string;
+  description: string;
+  attributes: {
+    name: string;
+    type: string;
+    selectedValue: string;
+  }[];
+  imageUrl: string;
+}
+
+export interface getUserCart {
+  id: string;
+  quantity: number;
+  product: CartProductType;
+  totalPrice: number;
+  currencySymbol: string;
+}
 export interface CartContextType {
   handleAddToCart: (state: ProductType) => void;
+  handleGetUserCart: (userId: number) => Promise<getUserCart[]>;
+  // numberOfItems: number;
 }

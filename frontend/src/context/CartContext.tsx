@@ -1,8 +1,9 @@
 import axios from "axios";
 import { Component, createContext } from "react";
-import { CartContextType } from "../types/cart.types";
+import { CartContextType, getUserCart } from "../types/cart.types";
 import { ProductResponse, ProductType } from "../types/other.types";
 import toast from "react-hot-toast";
+import { userContext } from "./UserContext";
 
 export const cartContext = createContext<CartContextType | null>(null);
 
@@ -10,10 +11,21 @@ interface propsType {
   children: React.ReactNode;
 }
 
+interface CartContextState {
+  numberOfItems: number;
+}
+
 export default class CartContextProvider extends Component<
   propsType,
-  ProductType
+  CartContextState
 > {
+  state = {
+    numberOfItems: 0,
+  };
+
+  static contextType = userContext;
+  declare context: React.ContextType<typeof userContext>;
+
   handleAddToCart = async (state: ProductType) => {
     if (state.in_stock) {
       const selectedAttributesArr = [];
@@ -61,9 +73,61 @@ export default class CartContextProvider extends Component<
     }
   };
 
+  handleGetUserCart = async () => {
+    //userId: number parameter
+    const data = {
+      query: `
+        query{
+          GetUserCart(userId: 1) {
+            id
+            quantity
+            product {
+              id
+              name
+              price
+              brand
+              category
+              description
+              attributes {
+                name
+                type
+                selectedValue
+              }
+              imageUrl
+            }
+            totalPrice
+            currencySymbol
+          }
+        }`,
+    };
+
+    const config = {
+      method: "post",
+      url: "http://localhost:8000/graphql",
+      data: data,
+    };
+
+    const response = await axios.request(config);
+    const res: getUserCart[] = response.data.data.GetUserCart;
+    return res;
+  };
+
+  // async componentDidMount(): Promise<void> {
+  //   if (this.context?.userId) {
+  //     const items = await this.handleGetUserCart(this.context.userId);
+  //     this.state.numberOfItems = items.length;
+  //   }
+  // }
+
   render(): React.ReactNode {
     return (
-      <cartContext.Provider value={{ handleAddToCart: this.handleAddToCart }}>
+      <cartContext.Provider
+        value={{
+          handleAddToCart: this.handleAddToCart,
+          handleGetUserCart: this.handleGetUserCart,
+          // numberOfItems: this.state.numberOfItems,
+        }}
+      >
         {this.props.children}
       </cartContext.Provider>
     );
