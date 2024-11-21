@@ -1,27 +1,81 @@
 import { Component, ReactNode } from "react";
 import { getUserCart } from "../types/cart.types";
+import { cartContext } from "../context/CartContext";
+import toast from "react-hot-toast";
 
 interface CartItemsProps {
   items: getUserCart[];
   onClose: () => void;
 }
 
-export default class CartItems extends Component<CartItemsProps> {
+interface CartItemsState {
+  cartItems: getUserCart[];
+}
+
+export default class CartItems extends Component<
+  CartItemsProps,
+  CartItemsState
+> {
+  static contextType = cartContext;
+  declare context: React.ContextType<typeof cartContext>;
+
+  constructor(props: CartItemsProps) {
+    super(props);
+    this.state = {
+      cartItems: props.items,
+    };
+  }
+
+  getTotalPrice = () => {
+    return this.state.cartItems
+      .reduce((total, item) => total + item.totalPrice, 0)
+      .toFixed(2);
+  };
+
+  handleChangeQuantity = async (increase: boolean, itemId: number) => {
+    const res = await this.context?.changeItemQuantity(increase, itemId);
+    if (res?.quantity) {
+      this.setState((prevState) => ({
+        cartItems: prevState.cartItems.map((item) =>
+          item.id === String(itemId)
+            ? {
+                ...item,
+                totalPrice: res.quantity * item.product.price,
+                quantity: res.quantity,
+              }
+            : item
+        ),
+      }));
+    }
+  };
+
+  handlePlaceOrder = async () => {
+    const userId = 1
+    //userId: number should be a param
+    console.log("inside place order");
+    const res = await this.context?.addOrder(userId);
+    console.log(res);
+    if (res?.addOrder.startsWith("Successfully")) {
+      toast.success("Order placed successfully");
+    }
+  };
+
   render(): ReactNode {
-    const { items, onClose } = this.props;
+    const { onClose } = this.props;
+    const { cartItems } = this.state;
 
     return (
       <>
         <div className="fixed inset-0 bg-black/50 z-20" onClick={onClose} />
         <div className="fixed top-[40px] right-[110px] w-[400px] max-h-[600px] overflow-y-auto bg-white p-4 z-30 shadow-lg">
           <h2 className="text-2xl mb-4">Shopping Cart</h2>
-          {items.length === 0 ? (
+          {cartItems.length === 0 ? (
             <p>Your cart is empty</p>
           ) : (
             <>
-              {items.map((item, index) => (
+              {cartItems.map((item) => (
                 <div
-                  key={index}
+                  key={item.id}
                   className="flex flex-col border-b py-4"
                   data-testid={`cart-item-${item.product.name
                     .toLowerCase()
@@ -33,6 +87,9 @@ export default class CartItems extends Component<CartItemsProps> {
                         <button
                           className="w-6 h-6 border border-gray-700 flex items-center justify-center text-sm"
                           data-testid="cart-item-amount-increase"
+                          onClick={() =>
+                            this.handleChangeQuantity(true, Number(item.id))
+                          }
                         >
                           +
                         </button>
@@ -45,6 +102,9 @@ export default class CartItems extends Component<CartItemsProps> {
                         <button
                           className="w-6 h-6 border border-gray-700 flex items-center justify-center text-sm"
                           data-testid="cart-item-amount-decrease"
+                          onClick={() =>
+                            this.handleChangeQuantity(false, Number(item.id))
+                          }
                         >
                           -
                         </button>
@@ -52,7 +112,7 @@ export default class CartItems extends Component<CartItemsProps> {
                       <img
                         src={item.product.imageUrl}
                         alt={item.product.name}
-                        className="w-24 h-24 object-cover"
+                        className="w-24 h-24 object-contain"
                       />
                     </div>
                     <div className="flex-1">
@@ -64,7 +124,6 @@ export default class CartItems extends Component<CartItemsProps> {
                         {item.totalPrice.toFixed(2)}
                       </p>
 
-                      {/* Attributes */}
                       {item.product.attributes.map((attr) => (
                         <div key={attr.name} className="mb-4">
                           <h2 className="text-sm font-medium mb-2">
@@ -86,7 +145,7 @@ export default class CartItems extends Component<CartItemsProps> {
                               />
                             ) : (
                               <div
-                                className="w-8 h-8 flex items-center justify-center bg-gray-700 text-white"
+                                className="w-8 h-8 flex items-center justify-center border border-black"
                                 data-testid={`cart-item-attribute-${attr.name
                                   .toLowerCase()
                                   .replace(/\s+/g, "-")}-${attr.selectedValue
@@ -108,15 +167,14 @@ export default class CartItems extends Component<CartItemsProps> {
                 <div className="flex justify-between text-lg font-medium mb-4">
                   <span>Total:</span>
                   <span>
-                    {items[0]?.currencySymbol}
-                    {items
-                      .reduce((total, item) => total + item.totalPrice, 0)
-                      .toFixed(2)}
+                    {cartItems[0]?.currencySymbol}
+                    {this.getTotalPrice()}
                   </span>
                 </div>
                 <button
                   className="w-full py-3 px-6 bg-emerald-500 hover:bg-emerald-600 text-white transition-colors disabled:bg-gray-200 disabled:text-gray-500"
-                  disabled={items.length === 0}
+                  disabled={cartItems.length === 0}
+                  onClick={() => this.handlePlaceOrder()}
                 >
                   PLACE ORDER
                 </button>

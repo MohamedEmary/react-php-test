@@ -28,7 +28,7 @@ export default class UserContextProvider extends Component<UserContextProps> {
     }
   }
 
-  render() {
+  render(): React.ReactNode {
     return (
       <userContext.Provider
         value={{

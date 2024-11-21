@@ -27,6 +27,7 @@ interface CartProductType {
   id: string;
   name: string;
   brand: string;
+  price: number;
   category: string;
   description: string;
   attributes: {
@@ -44,8 +45,22 @@ export interface getUserCart {
   totalPrice: number;
   currencySymbol: string;
 }
+
+interface changeQuantity {
+  id: string;
+  quantity: number;
+}
+
+interface addOrderRes {
+  addOrder: string;
+}
+
 export interface CartContextType {
   handleAddToCart: (state: ProductType) => void;
   handleGetUserCart: (userId: number) => Promise<getUserCart[]>;
-  // numberOfItems: number;
+  changeItemQuantity: (
+    increase: boolean,
+    id: number
+  ) => Promise<changeQuantity>;
+  addOrder: (userId: number) => Promise<addOrderRes>;
 }

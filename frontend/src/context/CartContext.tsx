@@ -112,6 +112,49 @@ export default class CartContextProvider extends Component<
     return res;
   };
 
+  changeItemQuantity = async (increase: boolean, id: number) => {
+    const data = {
+      query: `
+      mutation {
+        ${increase ? "In" : "De"}creaseCartItemQuantity(cartItemId: ${id}){
+          id
+          quantity
+        }
+      }`,
+    };
+
+    const config = {
+      method: "post",
+      url: "http://localhost:8000/graphql",
+      data: data,
+    };
+
+    const response = await axios.request(config);
+
+    return increase
+      ? response.data.data.IncreaseCartItemQuantity
+      : response.data.data.DecreaseCartItemQuantity;
+  };
+
+  addOrder = async (userId: number) => {
+    const data = {
+      query: `
+        mutation {
+          addOrder(userId: ${userId})
+        }`,
+    };
+
+    const config = {
+      method: "post",
+      url: "http://localhost:8000/graphql",
+      data: data,
+    };
+
+    const response = await axios.request(config);
+    console.log(response.data.data);
+    return response.data.data;
+  };
+
   // async componentDidMount(): Promise<void> {
   //   if (this.context?.userId) {
   //     const items = await this.handleGetUserCart(this.context.userId);
@@ -125,6 +168,8 @@ export default class CartContextProvider extends Component<
         value={{
           handleAddToCart: this.handleAddToCart,
           handleGetUserCart: this.handleGetUserCart,
+          changeItemQuantity: this.changeItemQuantity,
+          addOrder: this.addOrder,
           // numberOfItems: this.state.numberOfItems,
         }}
       >
