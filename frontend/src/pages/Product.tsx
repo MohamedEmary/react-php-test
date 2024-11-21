@@ -4,6 +4,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useParams } from "react-router-dom";
 import { ProductResponse, ProductType } from "../types/other.types";
 import { cartContext } from "../context/CartContext";
+import  parse  from "html-react-parser";
 
 const ProductPageWrapper = () => {
   const { id } = useParams();
@@ -231,11 +232,9 @@ class ProductPage extends Component<ProductPageProps, ProductType> {
             {in_stock ? "ADD TO CART" : "OUT OF STOCK"}
           </button>
 
-          <div
-            className="mt-12 text-gray-600 text-sm"
-            // since the description is in html not plain text
-            dangerouslySetInnerHTML={{ __html: description }}
-          />
+          <div className="mt-12 text-gray-600 text-sm">
+            {parse(description)}
+          </div>
         </div>
       </div>
     );
